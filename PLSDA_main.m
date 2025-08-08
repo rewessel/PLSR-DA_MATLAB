@@ -75,7 +75,7 @@ X_pre_z = X_pre_z(:,ia); %subset X_pre_z to only LASSO-selected features
 end
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'yes')
-    tol = 0.01;
+    tol = 0.00001;
     [X_filt] = OPLS(X,Y,tol); %optionally output X_ortho as well
     X = X_filt;
 end

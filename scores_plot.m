@@ -58,14 +58,15 @@ elseif strcmp(PLSR_or_PLSDA,'PLSDA')
     
     end
 % gscatter(XScore(:,1),XScore(:,2),categorical(Y(:,1)),'o',clrs,[],30, 'MarkerEdgeColor' ,'k'); 
-scatter(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),10,'o','markerfacecolor',palette(1,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.2,'markeredgealpha',0.2);hold on
-scatter(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),10,'o','markerfacecolor',palette(2,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.2,'markeredgealpha',0.2);    
+xline(0,'color',[0.5 0.5 0.5],'handlevisibility','off'); hold on; yline(0,'color',[0.5 0.5 0.5],'handlevisibility','off')
+scatter(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),70,'o','markerfacecolor',palette(1,:), 'MarkerEdgeColor' ,'k','markerfacealpha',1,'markeredgealpha',0.2);hold on
+scatter(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),70,'o','markerfacecolor',palette(2,:), 'MarkerEdgeColor' ,'k','markerfacealpha',1,'markeredgealpha',0.2);    
 
 xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,1),'%.0f'),'%)')); 
     ylabel(append('LV2',' (X_{var} = ',num2str(100*PCTVAR(1,2),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,2),'%.0f'),'%)')); 
 %     xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%)')); 
 %     ylabel(append('LV2',' (X_{var} = ',num2str(100*PCTVAR(1,2),'%.0f'),'%)')); 
-title(append('X scores',' (CV acc. = ',num2str(Q2,'%.0f'),'%',', p = ',num2str(p_perm,'%.3f'),')')); set(gca,'fontsize',16); 
+title(append('X scores',' (CV acc. = ',num2str(Q2,'%.0f'),'%',', p < ',num2str(p_perm,'%.3f'),')')); set(gca,'fontsize',16); 
 
 %     colormap copper(2); colormap(flipud(copper)); 
     legend(categories{1},categories{2},'location','northeast')
