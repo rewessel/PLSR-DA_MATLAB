@@ -57,7 +57,9 @@ varNames_old = varNames;
 clear lasso_feat b fitInfo minMSE minMSE_Lambda
 if strcmp(LASSO,'yes')
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 1, 500, 0.95, cv_style{2});
+% [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
+
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 0.1, 500, 0.7, cv_style{2});
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
