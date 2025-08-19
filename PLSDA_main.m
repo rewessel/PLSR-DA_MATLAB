@@ -59,7 +59,7 @@ if strcmp(LASSO,'yes')
 
 % [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 0.5, 100, 0.5, cv_style{2});
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 1, 500, 0.5, cv_style{2});
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
@@ -94,7 +94,7 @@ end
 % end
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'yes')
-    tol = 0.00001;
+    tol = 0.0000001;
     [X_filt] = OPLS(X,Y,tol); %optionally output X_ortho as well
     X = X_filt;
 end

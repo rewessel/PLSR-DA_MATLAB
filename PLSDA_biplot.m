@@ -3,12 +3,16 @@ function PLSDA_biplot(XScore,PCTVAR,Y,categories,CV_accuracy,p_perm,palette,XLoa
     % models.
     figure; tiledlayout(1,2); nexttile
     % mkrs = {'o','s','^','d',};
-        mkrs = {'o','o','o','o'};
+        mkrs = {'o','o','o','o','o','o'};
 
     xline(0,'handlevisibility','off');yline(0,'handlevisibility','off'); hold on
 
     for m = 1:width(Y)
         scatter(XScore(Y(:,m)==1,1),XScore(Y(:,m)==1,2),50,mkrs{m},'markerfacecolor',palette(m,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.85,'markeredgealpha',1);    
+       
+        hold on;
+        error_ellipse(XScore(Y(:,m)==1,1),XScore(Y(:,m)==1,2),palette(m,:))
+        
     end
         %%%%%% here, trying to figure out scaling
 
@@ -31,5 +35,6 @@ function PLSDA_biplot(XScore,PCTVAR,Y,categories,CV_accuracy,p_perm,palette,XLoa
     % ax.FontSize=16;
     set(gca,'fontsize',16); 
     % ylim([-0.25 0.25]); %xlim([-5 6])
+
 
 end

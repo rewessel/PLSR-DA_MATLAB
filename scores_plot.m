@@ -20,7 +20,7 @@ function scores_plot(PLSR_or_PLSDA,XScore,PCTVAR,Y,YscaleLabel,Q2,p_perm,categor
 %PLSDA.
 %categories: The categories you are discriminating between. gbh[] for PLSR.
 
-figure;
+figure; xline(0,'HandleVisibility','off'); hold on; yline(0,'HandleVisibility','off');
 
 %If this function is called in PLSR analysis, use a continuous color bar
 if strcmp(PLSR_or_PLSDA,'PLSR')
@@ -36,7 +36,7 @@ if strcmp(PLSR_or_PLSDA,'PLSR')
         % title({append('X scores',' (Q^2 = ',num2str(Q2*100,'%.0f'),'%)');...
         % append('p = ',num2str(p_perm,'%.3f'))}); set(gca,'fontsize',16); 
         title({append('X scores',' (Q^2 = ',num2str(Q2,'%.2f'),')');...
-        append('p = ',num2str(p_perm,'%.3f'))}); set(gca,'fontsize',16);
+        append('p=',num2str(p_perm,'%.3f'))}); set(gca,'fontsize',16);
     colormap(cmap);% colormap(flipud(cmap)); 
     % colormap pink; colormap(flipud(pink)); 
     % colormap copper; colormap(flipud(copper)); 
@@ -61,16 +61,17 @@ elseif strcmp(PLSR_or_PLSDA,'PLSDA')
     end
 % gscatter(XScore(:,1),XScore(:,2),categorical(Y(:,1)),'o',clrs,[],30, 'MarkerEdgeColor' ,'k'); 
 xline(0,'color',[0.5 0.5 0.5],'handlevisibility','off'); hold on; yline(0,'color',[0.5 0.5 0.5],'handlevisibility','off')
-scatter(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),70,'o','markerfacecolor',palette(1,:), 'MarkerEdgeColor' ,'k','markerfacealpha',1,'markeredgealpha',0.2);hold on
-scatter(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),70,'o','markerfacecolor',palette(2,:), 'MarkerEdgeColor' ,'k','markerfacealpha',1,'markeredgealpha',0.2);    
 scatter(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),50,'o','markerfacecolor',palette(1,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.75,'markeredgealpha',0.2);hold on
 scatter(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),50,'o','markerfacecolor',palette(2,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.75,'markeredgealpha',0.2);    
+
+error_ellipse(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),palette(1,:))
+error_ellipse(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),palette(2,:))
 
 xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,1),'%.0f'),'%)')); 
     ylabel(append('LV2',' (X_{var} = ',num2str(100*PCTVAR(1,2),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,2),'%.0f'),'%)')); 
 %     xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%)')); 
 %     ylabel(append('LV2',' (X_{var} = ',num2str(100*PCTVAR(1,2),'%.0f'),'%)')); 
-title(append('X scores',' (CV acc. = ',num2str(Q2,'%.0f'),'%',', p < ',num2str(p_perm,'%.3f'),')')); set(gca,'fontsize',16); 
+title(append('X scores',' (CV acc. = ',num2str(Q2,'%.0f'),'%',', p=',num2str(p_perm,'%.3f'),')')); set(gca,'fontsize',16); 
 
 %     colormap copper(2); colormap(flipud(copper)); 
     legend(categories{1},categories{2},'location','northeast')
