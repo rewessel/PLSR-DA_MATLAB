@@ -59,7 +59,7 @@ if strcmp(LASSO,'yes')
 
 % [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 1, 500, 0.5, cv_style{2});
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 0.5, 500, 0.1, cv_style{2});
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
@@ -68,6 +68,25 @@ if strcmp(LASSO,'yes')
     model.varNames_old = varNames_old;
     model.lasso_idx = ia;
     model.X_pre_z = X_pre_z;
+
+    % build LASSO network with Bonferroni correction
+    n=1;
+    [rho,pval]=corr(model.X_pre_z,model.X_pre_z_total,'type','Pearson');
+    for i = 1:width(model.X_pre_z)
+        for j = 1:width(model.X_pre_z_total)
+    
+        source_table(n) = model.varNames_old(model.lasso_idx(i));
+        target_table(n) = model.varNames_old(j);
+        rho_table(n) = rho(i,j);
+        pval_table(n) = pval(i,j);
+        n=n+1;
+        end
+    end
+    pval_corrected = pval_table*length(pval_table); %apply bonferroni correction
+    model.LASSO_network = table(source_table',target_table',rho_table',pval_table',pval_corrected','VariableNames',{'LASSO_Feature','Correlate','rho','pval','pval_Bonferroni'});
+
+    % remove self-correlations
+    model.LASSO_network = model.LASSO_network(~strcmp(model.LASSO_network.LASSO_Feature(i),model.LASSO_network.Correlate),:);
 
 end
 % if strcmp(LASSO,'yes')
