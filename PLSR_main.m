@@ -50,7 +50,7 @@ varNames_old = varNames;
 clear lasso_feat b fitInfo minMSE minMSE_Lambda
 if strcmp(LASSO,'yes')
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 1, 500, 0.2, cv_style{2});
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 0.25, 100, 0.5, cv_style{2});
    % 
    % lasso_feat = [];
    %  for n = 1:100
@@ -73,7 +73,7 @@ if strcmp(LASSO,'yes')
 end
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'yes')
-    tol = 0.1;
+    tol = 0.01;
     [X_filt] = OPLS(X,Y,tol);
     X = X_filt; %set X as the orthogonalized/filtered data
 end

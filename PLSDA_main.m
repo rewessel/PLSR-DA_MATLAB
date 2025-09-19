@@ -50,7 +50,6 @@ close all;
 %% Import data and optional LASSO feature selection
 X_pre_z_total = X; %X_pre_z is pre z-scored X data
 X_pre_z = X; %X_pre_z is pre z-scored X data
-
 X = zscore(X);
 varNames_old = varNames;
 
@@ -59,7 +58,7 @@ if strcmp(LASSO,'yes')
 
 % [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 1, 1000, 0.15, cv_style{2});
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE',1, 100, 0.7, cv_style{2});
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
@@ -113,7 +112,7 @@ end
 % end
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'yes')
-    tol = 0.0000001;
+    tol = 0.01;
     [X_filt] = OPLS(X,Y,tol); %optionally output X_ortho as well
     X = X_filt;
 end
@@ -144,9 +143,18 @@ R2 = [0 cumsum(PCTVAR(2,:))];
 
 %determine CV-accuracy (how well can my model classify into groups?)
 %predicted Y categories based on the cross-validated model
-Y_predicted = [ones(size(X,1),1) X]*BETA;
 %if prediction < 0.5, make it a logical 0; if > 0.5, make it a logical 1
 % Y_predicted(Y_predicted<0.5) = 0; Y_predicted(Y_predicted>=0.5) = 1;
+
+% calculate predicted Y values
+Y_predicted = [ones(size(X,1),1) X]*BETA;
+
+% Plot ROC curve
+[x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); % 'Nboot' to do confidence intervale
+figure; plot(x_roc,y_roc,'lineWidth',2); hold on
+xlabel('False Positive Rate'); ylabel('True Positive Rate')
+
+% determine cross validation accuracy
 [~,idx]=max(Y_predicted,[],2);
 Y_predicted_new = zeros(size(Y_predicted));
 
@@ -156,11 +164,12 @@ end
 
 correct = 0;
 for i = 1:length(Y)
-    if Y(i,:) == Y_predicted_new(i,:)
+    if Y(i,:) == Y_predicted_new(i,:) %Y(i,:) == Y_predicted_new(i,:)
         correct = correct + 1; %If prediction and actual label match, increase count of "correct" assignments.
     end
 end
 CV_accuracy = correct/length(Y)*100; %correct classification rate
+
 %% permutation testing 
 p_perm = permtest(X,Y,ncomp,nperm,cvp,'empirical','PLSDA',CV_accuracy);
 
@@ -181,7 +190,7 @@ model.varNames = varNames;
 model.stats = stats;
 model.MSE = MSE(2,ncomp+1);
 model.XpreZ = X_pre_z;
-
 model.palette = palette;
+model.ROC = [x_roc y_roc];
 %% plot results (scores plot, loadings plot, VIP scores)
 [model.vipScores,model.vipNames,model.pAdjBH, model.indAccBH, model.univar_pvals] = PLSDA_plot(model,categories)
