@@ -1,4 +1,4 @@
-function model = PLSDA_main(X,Y,ncomp,varNames,LASSO,ortho,cv_style,nperm,categories,palette)
+function model = PLSDA_main(X,Y,ncomp,varNames,LASSO,ortho,multilevel,cv_style,nperm,categories,palette)
 %% PLSDA framework, Dolatshahi Lab
 %% Author: Remziye Erdogan, 6/15/2021
 %This script performs PLS-DA using the MATLAB built-in function,
@@ -47,18 +47,31 @@ function model = PLSDA_main(X,Y,ncomp,varNames,LASSO,ortho,cv_style,nperm,catego
     %varNames = names of the variables in X
 
 close all;
-%% Import data and optional LASSO feature selection
+
+%% Read in data
 X_pre_z_total = X; %X_pre_z is pre z-scored X data
 X_pre_z = X; %X_pre_z is pre z-scored X data
+
+%% Optional - multilevel denoising for paired samples
+if strcmp(multilevel,'multilevel')
+    % multilevel denoising
+    for i = 1:height(X)/2
+        X(i,:) = X(i,:) - mean([X(i,:);X(i+height(X)/2,:)]);
+        X(i+height(X)/2,:) = X(i+height(X)/2,:) - mean([X(i,:);X(i+height(X)/2,:)]);
+    end
+end
+
+%% z-score data
 X = zscore(X);
 varNames_old = varNames;
 
+%% Optional LASSO feature selection
 clear lasso_feat b fitInfo minMSE minMSE_Lambda
-if strcmp(LASSO,'yes')
+if strcmp(string(LASSO{1}),'yes')
 
 % [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE',1, 100, 0.7, cv_style{2});
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE',LASSO{2}, 200, LASSO{3}, cv_style{2});
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
@@ -88,34 +101,14 @@ if strcmp(LASSO,'yes')
     model.LASSO_network = model.LASSO_network(~strcmp(model.LASSO_network.LASSO_Feature(i),model.LASSO_network.Correlate),:);
 
 end
-% if strcmp(LASSO,'yes')
-% % Perform LASSO feature selection.
-% % Run a 10-fold cross validated LASSO regression and save the feature set
-% % with the lowest mean squared error.
-% 
-% varNames_old = varNames;
-% clear lasso_feat b fitInfo minMSE minMSE_Lambda
-% for n = 1:100
-%     n
-%     [b,fitInfo] = lasso(X,Y(:,1),'CV',10);
-%     [minMSE(n),idx] = min(fitInfo.MSE);
-%     lasso_feat(:,n) = b(:,idx);
-% %     lasso_feat = [lasso_feat; varNames(any(b(:,idx),2))];
-% end
-% % [~,idx]=min(minMSE);
-% % varNames = varNames_old(any(lasso_feat(:,idx),2));
-% varNames = varNames_old(sum(logical(lasso_feat),2)>=0.9*width(lasso_feat));
-% [~,ia,~] = intersect(varNames_old,varNames);
-% varNames = varNames_old(ia); %reorders varNames to match order in X
-% X = X(:,ia); %subset X to only contain LASSO-selected features
-% X_pre_z = X_pre_z(:,ia); %subset X_pre_z to only LASSO-selected features
-% end
+
 %% Orthogonal Projection to Latent Structures (OPLS)
-if strcmp(ortho,'yes')
+if strcmp(ortho,'orthogonal')
     tol = 0.01;
-    [X_filt] = OPLS(X,Y,tol); %optionally output X_ortho as well
-    X = X_filt;
+    [X_filt] = OPLS(X,Y,tol);
+    X = X_filt; %set X as the orthogonalized/filtered data
 end
+
 %% Perform PLSDA and calculate CV accuracy.
 clear TSS PLSR_XLoading PLSR_YLoading PLSR_XScore PLSR_YScore PLSR_yfit;
 clear R2 Q2;
@@ -128,31 +121,42 @@ elseif strcmp(cv_style{1},'loo')
     cvp = cvpartition(height(X),'Leaveout');  
 end   
 
-%Calculate total sum of squares (TSS)
-TSS = sum((Y-mean(Y)).^2);
-
-%Call plsregess using the CV method defined above
-[XLoading,YLoading,XScore,YScore,BETA,PCTVAR,MSE,stats] = plsregress(X,Y,ncomp,'cv',cvp);
-% Prediction accuracy based on cross validation
-
-% Q2 = [0 1-length(Y)*MSE(2,2:end)/TSS]; [Q2max,Q2idx] = max(Q2);
-% Q2 = [0 1-length(Y)*MSE(2,2:end)/TSS]; [Q2max,Q2idx] = max(Q2);
-
-% Performance
-R2 = [0 cumsum(PCTVAR(2,:))];
-
 %determine CV-accuracy (how well can my model classify into groups?)
 %predicted Y categories based on the cross-validated model
 %if prediction < 0.5, make it a logical 0; if > 0.5, make it a logical 1
 % Y_predicted(Y_predicted<0.5) = 0; Y_predicted(Y_predicted>=0.5) = 1;
 
+Y_predicted = zeros(size(Y)); 
+if strcmp(cv_style{1},'kfold')
+    % n=1;
+    for i = 1:cv_style{2}
+        % holdout = randperm(height(X),ceil(height(X)/cv_style{2}));
+        [~,holdout] = datasample(X, ceil(height(X)/cv_style{2}), 'Replace', false);
+        cv_idx = setdiff(1:height(X),holdout);
+        [~,~,~,~,BETA,~,~,~] = plsregress(X(cv_idx,:),Y(cv_idx,:),ncomp,'cv','resubstitution');
+        Y_predicted(holdout,:) = [ones(size(X(holdout,:),1),1) X(holdout,:)]*BETA;
+    end
+
+elseif strcmp(cv_style{1},'loo')
+
+    for i = 1:height(Y)
+        holdout = i;
+        cv_idx = setdiff(1:height(X),i);
+        [~,~,~,~,BETA,~,~,~] = plsregress(X(cv_idx,:),Y(cv_idx,:),ncomp,'cv','resubstitution');
+        Y_predicted(holdout,:) = [ones(size(X(holdout,:),1),1) X(holdout,:)]*BETA;
+    end
+
+end   
+
 % calculate predicted Y values
-Y_predicted = [ones(size(X,1),1) X]*BETA;
+% Y_predicted = [ones(size(X,1),1) X]*BETA;
 
 % Plot ROC curve
-[x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); % 'Nboot' to do confidence intervale
+[x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); % 'Nboot' to do confidence interval
 figure; plot(x_roc,y_roc,'lineWidth',2); hold on
 xlabel('False Positive Rate'); ylabel('True Positive Rate')
+auc = trapz(x_roc,y_roc);
+title(append('AUC=',string(auc)))
 
 % determine cross validation accuracy
 [~,idx]=max(Y_predicted,[],2);
@@ -169,6 +173,20 @@ for i = 1:length(Y)
     end
 end
 CV_accuracy = correct/length(Y)*100; %correct classification rate
+
+%% Overall model with all the data
+%Calculate total sum of squares (TSS)
+TSS = sum((Y-mean(Y)).^2);
+
+%Call plsregess using the CV method defined above
+[XLoading,YLoading,XScore,YScore,BETA,PCTVAR,MSE,stats] = plsregress(X,Y,ncomp,'cv',cvp);
+
+% Prediction accuracy based on cross validation
+
+% Q2 = [0 1-length(Y)*MSE(2,2:end)/TSS]; [Q2max,Q2idx] = max(Q2);
+
+% Performance
+R2 = [0 cumsum(PCTVAR(2,:))];
 
 %% permutation testing 
 p_perm = permtest(X,Y,ncomp,nperm,cvp,'empirical','PLSDA',CV_accuracy);
@@ -192,5 +210,6 @@ model.MSE = MSE(2,ncomp+1);
 model.XpreZ = X_pre_z;
 model.palette = palette;
 model.ROC = [x_roc y_roc];
+model.AUC = round(auc,2);
 %% plot results (scores plot, loadings plot, VIP scores)
-[model.vipScores,model.vipNames,model.pAdjBH, model.indAccBH, model.univar_pvals] = PLSDA_plot(model,categories)
+[model.vipScores,model.vipNames,model.pAdjBH, model.indAccBH, model.univar_pvals] = PLSDA_plot(model,categories,multilevel)

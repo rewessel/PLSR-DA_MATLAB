@@ -1,4 +1,4 @@
-function [vipScores,vipNames,pAdj,indAccepted,pvals]=PLSDA_plot(model,categories)
+function [vipScores,vipNames,pAdj,indAccepted,pvals]=PLSDA_plot(model,categories,multilevel)
 %% PLSDA plotting, Dolatshahi Lab
 %% Author: Remziye Erdogan, 6/25/2021
 %INPUT:
@@ -30,7 +30,7 @@ PLSR_or_PLSDA = 'PLSDA';
 [vipScores,vipNames]=VIP(model.stats,model.XLoading,model.YLoading,model.XScore,model.varNames,palette,'all',[],model.Ydata,'PLSDA');
 % VIP(stats,XLoading,YLoading,XScore,varNames,palette,whichScores,plotThresh,Y,PLSR_or_PLSDA)
 %% univariate plots
-[pAdj, indAccepted,pvals] = univar_plot(model.XpreZ,model.Ydata,categories,vipNames,vipScores,model.varNames,palette);
+[pAdj, indAccepted,pvals] = univar_plot(model.XpreZ,model.Ydata,categories,vipNames,vipScores,model.varNames,palette,multilevel);
 
 if model.ncomp == 2
 
