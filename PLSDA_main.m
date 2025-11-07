@@ -51,6 +51,7 @@ close all;
 %% Read in data
 X_pre_z_total = X; %X_pre_z is pre z-scored X data
 X_pre_z = X; %X_pre_z is pre z-scored X data
+varNames_old = varNames;
 
 %% Optional - multilevel denoising for paired samples
 if strcmp(multilevel,'multilevel')
@@ -59,11 +60,10 @@ if strcmp(multilevel,'multilevel')
         X(i,:) = X(i,:) - mean([X(i,:);X(i+height(X)/2,:)]);
         X(i+height(X)/2,:) = X(i+height(X)/2,:) - mean([X(i,:);X(i+height(X)/2,:)]);
     end
-end
 
-%% z-score data
-X = zscore(X);
-varNames_old = varNames;
+else
+        X = zscore(X);
+end
 
 %% Optional LASSO feature selection
 clear lasso_feat b fitInfo minMSE minMSE_Lambda
@@ -131,10 +131,12 @@ if strcmp(cv_style{1},'kfold')
     % n=1;
     for i = 1:cv_style{2}
         % holdout = randperm(height(X),ceil(height(X)/cv_style{2}));
-        [~,holdout] = datasample(X, ceil(height(X)/cv_style{2}), 'Replace', false);
-        cv_idx = setdiff(1:height(X),holdout);
-        [~,~,~,~,BETA,~,~,~] = plsregress(X(cv_idx,:),Y(cv_idx,:),ncomp,'cv','resubstitution');
-        Y_predicted(holdout,:) = [ones(size(X(holdout,:),1),1) X(holdout,:)]*BETA;
+        % [~,holdout] = datasample(X, ceil(height(X)/cv_style{2}), 'Replace', false);
+        [training_set] = training(cvp,i);
+        [testing_set] = test(cvp,i);
+        % cv_idx = setdiff(1:height(X),holdout);
+        [~,~,~,~,BETA,~,~,~] = plsregress(X(training_set,:),Y(training_set,:),ncomp,'cv','resubstitution');
+        Y_predicted(testing_set,:) = [ones(size(X(testing_set,:),1),1) X(testing_set,:)]*BETA;
     end
 
 elseif strcmp(cv_style{1},'loo')
@@ -154,6 +156,7 @@ end
 % Plot ROC curve
 [x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); % 'Nboot' to do confidence interval
 figure; plot(x_roc,y_roc,'lineWidth',2); hold on
+plot([0,1],[0,1],'k--')
 xlabel('False Positive Rate'); ylabel('True Positive Rate')
 auc = trapz(x_roc,y_roc);
 title(append('AUC=',string(auc)))

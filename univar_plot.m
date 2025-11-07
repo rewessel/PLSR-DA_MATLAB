@@ -61,8 +61,8 @@ for n = 1:nplots
 
     elseif strcmp(multilevel,'multilevel')
     
-        p(n) = signrank(X(Y(:,m)==1,strcmp(string(vipNames(n)),varNames)), ...
-        X(Y(:,m)==0,strcmp(string(vipNames(n)),varNames)));
+        p(n) = signrank(X(Y(:,1)==1,strcmp(string(vipNames(n)),varNames)), ...
+        X(Y(:,2)==1,strcmp(string(vipNames(n)),varNames)));
     
         title(append('p = ',num2str(p(n),'%0.3f')))
         [pAdj, indAccepted] = findFDR(p, length(p), 0.05);
