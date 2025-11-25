@@ -98,7 +98,7 @@ if strcmp(string(LASSO{1}),'yes')
     model.LASSO_network = table(source_table',target_table',rho_table',pval_table',pval_corrected','VariableNames',{'LASSO_Feature','Correlate','rho','pval','pval_Bonferroni'});
 
     % remove self-correlations
-    model.LASSO_network = model.LASSO_network(~strcmp(model.LASSO_network.LASSO_Feature(i),model.LASSO_network.Correlate),:);
+    model.LASSO_network = model.LASSO_network(~strcmp(model.LASSO_network.LASSO_Feature,model.LASSO_network.Correlate),:);
 
 end
 
@@ -171,7 +171,7 @@ end
 
 correct = 0;
 for i = 1:length(Y)
-    if Y(i,:) == Y_predicted_new(i,:) %Y(i,:) == Y_predicted_new(i,:)
+    if Y(i,1) == Y_predicted_new(i,1) %Y(i,:) == Y_predicted_new(i,:)
         correct = correct + 1; %If prediction and actual label match, increase count of "correct" assignments.
     end
 end
@@ -214,5 +214,6 @@ model.XpreZ = X_pre_z;
 model.palette = palette;
 model.ROC = [x_roc y_roc];
 model.AUC = round(auc,2);
+
 %% plot results (scores plot, loadings plot, VIP scores)
 [model.vipScores,model.vipNames,model.pAdjBH, model.indAccBH, model.univar_pvals] = PLSDA_plot(model,categories,multilevel)

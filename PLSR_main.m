@@ -42,37 +42,51 @@ function model = PLSR_main(X,Y,ncomp,varNames,LASSO,ortho,cv_style,nperm,yDataLa
     %varNames = names of the variables in X
 
 close all;
-%% Import data and optional LASSO-feature selection
+
+%% Read in data
 X_pre_z_total = X; %X_pre_z is pre z-scored X data
-X = zscore(X); %Y = zscore(Y);
-
+X_pre_z = X; %X_pre_z is pre z-scored X data
 varNames_old = varNames;
-clear lasso_feat b fitInfo minMSE minMSE_Lambda
-if strcmp(LASSO,'yes')
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE', 0.25, 100, 0.5, cv_style{2});
-   % 
-   % lasso_feat = [];
-   %  for n = 1:100
-   %      [b,fitInfo] = lasso(X,Y,'CV',5);%10
-   %      [minMSE(n),idx] = min(fitInfo.MSE);
-   %      lasso_feat(:,n) = b(:,idx);
-   %  end
-   %  [~,idx]=min(minMSE);
-   %  varNames = varNames_old(any(lasso_feat(:,idx),2));
-   %  [~,ia,~] = intersect(varNames_old,varNames);
+%% Optional LASSO feature selection
+clear lasso_feat b fitInfo minMSE minMSE_Lambda
+if strcmp(string(LASSO{1}),'yes')
+
+% [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
+
+[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE',LASSO{2}, 200, LASSO{3}, cv_style{2});
+
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
-    % X = X(:,elastic_idx); 
-    % X_pre_z = X_pre_z_total(:,elastic_idx); %subset X_pre_z to only LASSO-selected features
+
     model.X_pre_z_total = X_pre_z_total;
     model.varNames_old = varNames_old;
     model.lasso_idx = ia;
     model.X_pre_z = X_pre_z;
 
+    % build LASSO network with Bonferroni correction
+    n=1;
+    [rho,pval]=corr(model.X_pre_z,model.X_pre_z_total,'type','Pearson');
+    for i = 1:width(model.X_pre_z)
+        for j = 1:width(model.X_pre_z_total)
+    
+        source_table(n) = model.varNames_old(model.lasso_idx(i));
+        target_table(n) = model.varNames_old(j);
+        rho_table(n) = rho(i,j);
+        pval_table(n) = pval(i,j);
+        n=n+1;
+        end
+    end
+    pval_corrected = pval_table*length(pval_table); %apply bonferroni correction
+    model.LASSO_network = table(source_table',target_table',rho_table',pval_table',pval_corrected','VariableNames',{'LASSO_Feature','Correlate','rho','pval','pval_Bonferroni'});
+
+    % remove self-correlations
+    model.LASSO_network = model.LASSO_network(~strcmp(model.LASSO_network.LASSO_Feature,model.LASSO_network.Correlate),:);
+
 end
+
 %% Orthogonal Projection to Latent Structures (OPLS)
-if strcmp(ortho,'yes')
+if strcmp(ortho,'orthogonal')
     tol = 0.01;
     [X_filt] = OPLS(X,Y,tol);
     X = X_filt; %set X as the orthogonalized/filtered data
