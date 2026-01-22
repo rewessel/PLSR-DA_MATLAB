@@ -1,4 +1,4 @@
-function p = permtest(X,Y,ncomp,nperm,cvp,stat_test,PLSR_or_PLSDA,CV_accuracy)
+function [p,CV_accuracy_rand] = permtest(X,Y,ncomp,nperm,cvp,stat_test,PLSR_or_PLSDA,CV_accuracy)
 %% PLSR framework, Dolatshahi Lab
 %% Author: Remziye Erdogan, 6/25/2021
 %This function runs a permutation test of the cross-validated model
@@ -98,9 +98,37 @@ if strcmp(PLSR_or_PLSDA,'PLSDA')
         %         correct = correct + 1;
         %     end
         % end
+
         CV_accuracy_rand(n) = correct/length(Y_rand)*100; %correct classification rate
+        [x_roc(:,n),y_roc(:,n)] = perfcurve(Y_rand(:,1),Y_predicted(:,1),1); 
+
     end
     metric = CV_accuracy; metric_rand = CV_accuracy_rand;
+
+    % add the null ROC curve to the ROC-AUC plot
+        % [x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); 
+
+        figure(1); plot(median(x_roc,2),median(y_roc,2),'lineWidth',1,'color',[0.5 0.5 0.5]); hold on
+    
+        % create a violin plot figure comparing CV true model vs. model
+        % with shuffled labels
+    figure;
+    if width(Y)==2
+        violindata.TrueModel = CV_accuracy;
+        violindata.Perm = CV_accuracy_rand;
+        violinplot(violindata); hold on
+        yline(length(Y(Y(:,1)==1,1))/length(Y)*100,'linestyle','--')
+        ylabel('CV accuracy (%)'); xticks([1,2]); xticklabels({'True Model','Permuted Y-labels'})
+    elseif width(Y)==3 % THIS IS HARD-CODED FOR NOW AND SHOULD BE GENERALIZED TO SUIT ANY MULTI-CLASS CASE
+        violindata.Class1 = CV_accuracy(:,1);
+        violindata.Class2 = CV_accuracy(:,2);
+        violindata.Class3 = CV_accuracy(:,3);
+        violindata.Perm = CV_accuracy_rand;
+        violinplot(violindata); hold on
+        yline(length(Y(Y(:,1)==1,1))/length(Y)*100,'linestyle','--')
+        ylabel('CV accuracy (%)'); xticks([1:4]); xticklabels({'Class 1','Class 2','Class 3','Permuted Y-labels'})
+    end
+
 end
 
 %determine the type of p-value to calculate
@@ -108,9 +136,9 @@ if strcmp(stat_test,'wilcoxon')
     p = signrank(metric_rand,metric);
 elseif strcmp(stat_test,'empirical')
     if metric == CV_accuracy
-        p = (length(find(metric_rand > metric))+1)/(nperm+1);
+        p = (length(find(metric_rand > mean(metric(1,:))))+1)/(nperm+1);
     elseif metric == Q20 | metric == MSE0
-        p = (length(find(metric_rand < metric))+1)/(nperm+1);
+        p = (length(find(metric_rand < mean(metric)))+1)/(nperm+1);
 %         if p >= 0.9
 %             p = (length(find(abs(metric_rand) < abs(metric)))+1) / (nperm+1);
 %         end
@@ -119,10 +147,14 @@ end
 
 %plot the histogram of MSEs, and report p-value in the title
 figure; 
-histogram([metric_rand,metric])
-hold on; plot(metric,0,'r*','markersize',10)
+histogram([metric_rand,mean(metric)])
+hold on; plot(mean(metric),0,'r*','markersize',10)
 title(append('Permutation Test (p = ',num2str(p,'%.3f'),')'))
 ax = gca; ax.FontSize = 20;
+
+
+
+
 
 end
 

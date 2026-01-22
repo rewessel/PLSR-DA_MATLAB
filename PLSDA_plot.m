@@ -39,11 +39,11 @@ if model.ncomp == 2
 
 %% scores plot (check name of model.CV_acc)
 PLSR_or_PLSDA = 'PLSDA';
-scores_plot(PLSR_or_PLSDA,model.XScore,model.PCTVAR,model.Ydata,[],model.CV_accuracy,model.p_perm,categories,palette);
+scores_plot(PLSR_or_PLSDA,model.XScore,model.PCTVAR,model.Ydata,[],mean(model.CV_accuracy),model.p_perm,categories,palette);
 
 else
 
-PLSDA_biplot(model.XScore,model.PCTVAR,model.Ydata,categories,model.CV_accuracy,model.p_perm,palette,model.XLoading,model.varNames)
+PLSDA_biplot(model.XScore,model.PCTVAR,model.Ydata,categories,mean(model.CV_accuracy(1,:)),model.p_perm,palette,model.XLoading,model.varNames)
 
 end
 

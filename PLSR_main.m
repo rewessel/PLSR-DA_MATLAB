@@ -87,7 +87,7 @@ end
 
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'orthogonal')
-    tol = 0.01;
+    tol = 0.1;
     [X_filt] = OPLS(X,Y,tol);
     X = X_filt; %set X as the orthogonalized/filtered data
 end

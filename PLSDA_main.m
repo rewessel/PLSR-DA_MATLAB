@@ -104,7 +104,7 @@ end
 
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'orthogonal')
-    tol = 0.01;
+    tol = 0.21;
     [X_filt] = OPLS(X,Y,tol);
     X = X_filt; %set X as the orthogonalized/filtered data
 end
@@ -112,7 +112,7 @@ end
 %% Perform PLSDA and calculate CV accuracy.
 clear TSS PLSR_XLoading PLSR_YLoading PLSR_XScore PLSR_YScore PLSR_yfit;
 clear R2 Q2;
-
+for n=1:1000 % 100 rounds of cross validaton TESTING THIS OUT
 %select cross-validation style
 if strcmp(cv_style{1},'kfold')
     k_fold = cv_style{2};
@@ -153,14 +153,6 @@ end
 % calculate predicted Y values
 % Y_predicted = [ones(size(X,1),1) X]*BETA;
 
-% Plot ROC curve
-[x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); % 'Nboot' to do confidence interval
-figure; plot(x_roc,y_roc,'lineWidth',2); hold on
-plot([0,1],[0,1],'k--')
-xlabel('False Positive Rate'); ylabel('True Positive Rate')
-auc = trapz(x_roc,y_roc);
-title(append('AUC=',string(auc)))
-
 % determine cross validation accuracy
 [~,idx]=max(Y_predicted,[],2);
 Y_predicted_new = zeros(size(Y_predicted));
@@ -169,13 +161,39 @@ for i = 1:height(Y_predicted)
     Y_predicted_new(i,idx(i))=1;
 end
 
-correct = 0;
-for i = 1:length(Y)
-    if Y(i,1) == Y_predicted_new(i,1) %Y(i,:) == Y_predicted_new(i,:)
-        correct = correct + 1; %If prediction and actual label match, increase count of "correct" assignments.
+if width(Y)==2
+    correct = 0;
+    for i = 1:length(Y)
+        if Y(i,:) == Y_predicted_new(i,:) %Y(i,:) == Y_predicted_new(i,:)
+            correct = correct + 1; %If prediction and actual label match, increase count of "correct" assignments.
+        end
     end
+    
+    CV_accuracy(n) = correct/length(Y)*100; %correct classification rate
+    % save for each round of cross-validation
+
+    elseif width(Y)>2 % calculate accuracy for each class separately
+        Yw = width(Y);
+        correct = zeros(1,Yw);
+        for i = 1:length(Y)
+            for w = 1:Yw
+                if Y(i,w) == Y_predicted_new(i,w) %Y(i,:) == Y_predicted_new(i,:)
+                    correct(w) = correct(w) + 1; %If prediction and actual label match, increase count of "correct" assignments.
+                end
+            end
+        end 
+    CV_accuracy(n,:) = correct/length(Y)*100; %correct classification rate
+
 end
-CV_accuracy = correct/length(Y)*100; %correct classification rate
+
+end
+% Plot ROC curve
+[x_roc,y_roc] = perfcurve(Y(:,1),Y_predicted(:,1),1); % 'Nboot' to do confidence interval
+figure(1); plot(x_roc,y_roc,'lineWidth',2); hold on
+plot([0,1],[0,1],'k--')
+xlabel('False Positive Rate'); ylabel('True Positive Rate')
+auc = trapz(x_roc,y_roc);
+title(append('AUC=',string(auc)))
 
 %% Overall model with all the data
 %Calculate total sum of squares (TSS)
@@ -192,7 +210,7 @@ TSS = sum((Y-mean(Y)).^2);
 R2 = [0 cumsum(PCTVAR(2,:))];
 
 %% permutation testing 
-p_perm = permtest(X,Y,ncomp,nperm,cvp,'empirical','PLSDA',CV_accuracy);
+[p_perm,CV_accuracy_perm] = permtest(X,Y,ncomp,nperm,cvp,'empirical','PLSDA',CV_accuracy);
 
 %% write output structure
 model.Xdata = X;
@@ -214,6 +232,7 @@ model.XpreZ = X_pre_z;
 model.palette = palette;
 model.ROC = [x_roc y_roc];
 model.AUC = round(auc,2);
+model.CV_accuracy_perm = CV_accuracy_perm;
 
 %% plot results (scores plot, loadings plot, VIP scores)
 [model.vipScores,model.vipNames,model.pAdjBH, model.indAccBH, model.univar_pvals] = PLSDA_plot(model,categories,multilevel)
