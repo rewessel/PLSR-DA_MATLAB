@@ -76,10 +76,18 @@ if strcmp(PLSR_or_PLSDA,'PLSDA')
     for n = 1:nperm
         Y_rand = Y(randperm(height(Y)),:);
         clear XLoading YLoading XScore YScore BETA PCTVAR MSE stats Q2;
-        [XLoading,YLoading,XScore,YScore,BETA,PCTVAR,MSE,stats] = plsregress(X,Y_rand,ncomp,'cv',cvp);
-        Y_predicted = [ones(size(X,1),1) X]*BETA;
+
+        for i = 1:cvp.NumTestSets
+            [training_set] = training(cvp,i);
+            [testing_set] = test(cvp,i);
+            [~,~,~,~,BETA,~,~,~] = plsregress(X(training_set,:),Y(training_set,:),ncomp,'cv','resubstitution');
+            Y_predicted(testing_set,:) = [ones(size(X(testing_set,:),1),1) X(testing_set,:)]*BETA;
+        end
+
+        % [XLoading,YLoading,XScore,YScore,BETA,PCTVAR,MSE,stats] = plsregress(X,Y_rand,ncomp,'cv',cvp);
+        % Y_predicted = [ones(size(X,1),1) X]*BETA;
         % Y_predicted(Y_predicted<0.5) = 0; Y_predicted(Y_predicted>=0.5) = 1;
-        correct = 0;
+
         [~,idx]=max(Y_predicted,[],2);
         Y_predicted_new = zeros(size(Y_predicted));
         
