@@ -1,5 +1,7 @@
 # PLSR-DA_MATLAB
 
+Note to self:  update README to include description of optional preprocessing steps available (multilevel scaling, orthogonalization, LASSO feature selection), quirks about orthogonalization tolerance parameter, number of cross-validation reps, how to implement independent cross validation (and why you really should cross validate separately outside of this script if you perform feature selection).
+
 A toolkit to implement partial least squares regression (PLSR) and discriminant analysis (PLSDA) in MATLAB.
 
 Descriptions of codes are as follows:
