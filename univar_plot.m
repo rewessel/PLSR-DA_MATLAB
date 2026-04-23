@@ -44,21 +44,28 @@ for n = 1:nplots
         ylabel(vipNames(n));
         xlim([0 m+1])
 
-    if m == 2 & ~strcmp(multilevel,'multilevel') % use a t-test to compare 2 groups
-        [h,p(n)]=ttest2(X(Y(:,1)==1,strcmp(string(vipNames(n)),varNames)),...
-            X(Y(:,2)==1,strcmp(string(vipNames(n)),varNames)),'Vartype','unequal');
-        % [p(n),h]=ranksum(X(Y(:,1)==1,strcmp(string(vipNames(n)),varNames)),...
-        %     X(Y(:,2)==1,strcmp(string(vipNames(n)),varNames)));
+    % If two groups and unpaired samples, use a Mann-Whitney U-test /
+    % Wilcoxon rank sum test to compare groups.
+    if m == 2 & ~strcmp(multilevel,'multilevel')
+
+        % [h,p(n)]=ttest2(X(Y(:,1)==1,strcmp(string(vipNames(n)),varNames)),...
+        %     X(Y(:,2)==1,strcmp(string(vipNames(n)),varNames)),'Vartype','unequal');
+
+        [p(n),h]=ranksum(X(Y(:,1)==1,strcmp(string(vipNames(n)),varNames)),...
+            X(Y(:,2)==1,strcmp(string(vipNames(n)),varNames)));
+
         title(append('p = ',num2str(p(n),'%0.3f')))
                 [pAdj, indAccepted] = findFDR(p, length(p), 0.05);
 
-    elseif m > 2 % use a kruskalwallis test to compare multiple groups
+    % Use a Kruskal Wallis test to compare multiple groups.
+    elseif m > 2 
         % make a group variable
         [~,~,stats]=kruskalwallis(X(:,strcmp(string(vipNames(n)),varNames)),Ygroup,'off');
         c=multcompare(stats,'CriticalValueType','dunn-sidak','Display','off');
         p(:,n)=c(:,6);
         pAdj = ''; indAccepted = '';
 
+    % If samples are paired, use a paired signed rank test.
     elseif strcmp(multilevel,'multilevel')
     
         p(n) = signrank(X(Y(:,1)==1,strcmp(string(vipNames(n)),varNames)), ...
@@ -68,11 +75,6 @@ for n = 1:nplots
         [pAdj, indAccepted] = findFDR(p, length(p), 0.05);
 
     end        
-
-        %     [~,~,stats]=kruskalwallis(X(:,n),Ygroup,'off');
-        % c=multcompare(stats,'CriticalValueType','dunn-sidak','Display','off');
-        % p(:,n)=c(:,6);
-        % pAdj = ''; indAccepted = '';
 
  end
 

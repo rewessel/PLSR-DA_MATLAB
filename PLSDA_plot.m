@@ -11,39 +11,38 @@ function [vipScores,vipNames,pAdj,indAccepted,pvals]=PLSDA_plot(model,categories
 %Scores plot: Scatter plot of X scores.
 %Loadings plot: Two bar graphs of variable loadings on LV1 and LV2.
 %VIP scores plot: A bar graph of VIP scores, colored by group.
-%red/blue palette:
-palette = [68 210 242; 81 127 245]/255;
 
 % if no palette is given, assign a color scheme.
-% if model.palette == []
-%     palette = [1 0 1; 0 1 0];
-%     palette = [0 0 1 ;0 1 0];
-%     palette = [0 0 1;1 0 1];
-% else
+if isempty(model.palette)
+    palette = [1 0 0; 0 0 1];
+else
     palette = model.palette;
-% end
+end
 %determine which group has the lowest mean Xscores value to assign colors.
 
 PLSR_or_PLSDA = 'PLSDA';
 
-%% VIP score calculation and plot
-[vipScores,vipNames]=VIP(model.stats,model.XLoading,model.YLoading,model.XScore,model.varNames,palette,'all',[],model.Ydata,'PLSDA');
-% VIP(stats,XLoading,YLoading,XScore,varNames,palette,whichScores,plotThresh,Y,PLSR_or_PLSDA)
-%% univariate plots
+%% VIP score calculation and bar plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[vipScores,vipNames]=VIP(model.stats,model.XLoading,model.YLoading,...
+    model.XScore,model.varNames,palette,'all',[],model.Ydata,'PLSDA');
+
+%% Univariate statistical analysis and boxplots %%%%%%%%%%%%%%%%%%%%%%%%%%%
 [pAdj, indAccepted,pvals] = univar_plot(model.XpreZ,model.Ydata,categories,vipNames,vipScores,model.varNames,palette,multilevel);
 
-if model.ncomp == 2
-
-%% loadings bar graph 
+%% loadings bar plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % loadings_plot(model.XLoading,model.varNames,1,palette,'PLSDA');
 
-%% scores plot (check name of model.CV_acc)
+%% X scores scatter plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 PLSR_or_PLSDA = 'PLSDA';
-scores_plot(PLSR_or_PLSDA,model.XScore,model.PCTVAR,model.Ydata,[],mean(model.CV_accuracy),model.p_perm,categories,palette);
+
+if model.ncomp == 2
+    
+    % If 2-class model, plot a simple scatter plot.
+    scores_plot(PLSR_or_PLSDA,model.XScore,model.PCTVAR,model.Ydata,[],mean(model.CV_accuracy),model.p_perm,categories,palette);
 
 else
-
-PLSDA_biplot(model.XScore,model.PCTVAR,model.Ydata,categories,mean(model.CV_accuracy(1,:)),model.p_perm,palette,model.XLoading,model.varNames)
+    % If m>2, plot a biplot with loadings and scores next to each other.
+    PLSDA_biplot(model.XScore,model.PCTVAR,model.Ydata,categories,mean(model.CV_accuracy(1,:)),model.p_perm,palette,model.XLoading,model.varNames)
 
 end
 

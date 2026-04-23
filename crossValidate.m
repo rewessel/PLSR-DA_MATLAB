@@ -1,17 +1,22 @@
-function [cv_true, cv_perm, cv_rand, lasso_idx] = iNTS_CV(X,Y,fullVarNames,kfold,ncomp,niter,alpha,stability,multilevel,lassoReps)
-
+function [cv_true, cv_perm, cv_rand, lasso_idx] = crossValidate(X,Y,fullVarNames,kfold,ncomp,niter,alpha,stability,multilevel,lassoReps)
 %% Cross-validation framework for Lakudzala et al (2026) - iNTS malaria paper
 %% Author:  Remziye Wessel, PhD (Apr 2026)
 
+arguments
+    X % Your X data matrix
+    Y % Your Y matrix containing class labels
+    fullVarNames % A cell array of variable names
+    kfold % The number of folds
+    ncomp % The number of model components
+    niter % The number of times to run cross validation
+    alpha % The alpha parameter input to run_elastic_net function
+    stability % The stability parameter input to run_elastic_net function
+    multilevel % flag if you want to do multilevel preprocessing before
+    % scaling and training a model ('multilevel')
+    lassoReps % How many times you want to repeat LASSO function (recommend 10<n<100)
+end
+
 rng(1); % set random number generator seed
-% niter is number of times to run cross validation
-% kfold cross validation
-% ncomp is number of model components
-% alpha is the alpha parameter for run_elastic_net function
-% stability is the stability parameter for run_elastic_net function
-% multilevel is a flag if you want to do multilevel preprocessing before
-% scaling and training a model
-% lassoReps is how many times you want to repeat LASSO function
 
 % number of times to do random feature selection and random permutations:
 nperm = 10;
@@ -41,7 +46,6 @@ if strcmp(multilevel,'multilevel')
         Xml(m,:) = X(m,:) - pairwise_mean;
         Xml(m+height(X)/2,:) = X(m+height(X)/2,:) - pairwise_mean;
     end
-    % Xml = zscore(Xml); % multilevel data... if just using X, make sure you zscore it!
 end
 
 % Loop through several independent CV iterations (defined by niter)
@@ -136,3 +140,4 @@ cv_perm = mean(cv_perm,2);
 cv_rand = mean(cv_rand,2);
 
 end
+

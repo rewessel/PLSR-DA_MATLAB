@@ -47,10 +47,11 @@ if strcmp(PLSR_or_PLSDA,'PLSR')
 
 % if this is called in PLSDA analysis, define color groups separately
 elseif strcmp(PLSR_or_PLSDA,'PLSDA')
+    
     %this should work out the plot colors
     mean_group1 = mean(XScore(1:ceil(length(XScore))/2,1));
     mean_group2 = mean(XScore((floor(length(XScore))/2+1):end,1));
-%     clrs=[219, 164, 110;112, 93, 73]/255; %(dark color, light color)
+
     if mean_group1<mean_group2
 
         clrs = [palette(1,:);palette(2,:)];
@@ -59,30 +60,26 @@ elseif strcmp(PLSR_or_PLSDA,'PLSDA')
         clrs = [palette(2,:);palette(1,:)];
     
     end
-% gscatter(XScore(:,1),XScore(:,2),categorical(Y(:,1)),'o',clrs,[],30, 'MarkerEdgeColor' ,'k'); 
-xline(0,'color',[0.5 0.5 0.5],'handlevisibility','off'); hold on; yline(0,'color',[0.5 0.5 0.5],'handlevisibility','off')
-scatter(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),50,'o','markerfacecolor',palette(1,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.75,'markeredgealpha',0.2);hold on
-scatter(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),50,'o','markerfacecolor',palette(2,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.75,'markeredgealpha',0.2);    
 
-error_ellipse(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),palette(1,:))
-error_ellipse(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),palette(2,:))
+    xline(0,'color',[0.5 0.5 0.5],'handlevisibility','off'); hold on; yline(0,'color',[0.5 0.5 0.5],'handlevisibility','off')
 
-xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,1),'%.0f'),'%)')); 
+    scatter(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),50,'o','markerfacecolor',...
+        palette(1,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.75,'markeredgealpha',0.2);hold on
+    scatter(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),50,'o','markerfacecolor',...
+        palette(2,:), 'MarkerEdgeColor' ,'k','markerfacealpha',0.75,'markeredgealpha',0.2);    
+
+    % Add ellipses around each group
+    error_ellipse(XScore(Y(:,1)==1,1),XScore(Y(:,1)==1,2),palette(1,:))
+    error_ellipse(XScore(Y(:,1)==0,1),XScore(Y(:,1)==0,2),palette(2,:))
+
+    xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,1),'%.0f'),'%)')); 
+
     ylabel(append('LV2',' (X_{var} = ',num2str(100*PCTVAR(1,2),'%.0f'),'%, Y_{var} = ',num2str(100*PCTVAR(2,2),'%.0f'),'%)')); 
-%     xlabel(append('LV1',' (X_{var} = ',num2str(100*PCTVAR(1,1),'%.0f'),'%)')); 
-%     ylabel(append('LV2',' (X_{var} = ',num2str(100*PCTVAR(1,2),'%.0f'),'%)')); 
-title(append('X scores',' (CV acc. = ',num2str(Q2,'%.0f'),'%',', p=',num2str(p_perm,'%.3f'),')')); set(gca,'fontsize',16); 
 
-%     colormap copper(2); colormap(flipud(copper)); 
+    title(append('X scores',' (CV acc. = ',num2str(Q2,'%.0f'),'%',', p=',sprintf('%.2e',p_perm),')')); set(gca,'fontsize',16); 
+
     legend(categories{1},categories{2},'location','northeast')
 end
-%c.Direction = 'reverse';
 
-% figure; subplot(1,2,1); scatter(XScore(:,1),XScore(:,2),[],Y,'filled','markeredgecolor','k'); %'MarkerFaceColor','#77F8FF'
-% xlabel(append('LV1',' (Y var = ',num2str(100*PCTVAR(2,1),'%.1f'),'%)')); ylabel(append('LV2',' (',num2str(100*PCTVAR(2,2),'%.1f'),'%)')); title('X scores'); set(gca,'fontsize',20); 
-% subplot(1,2,2); scatter(YScore(:,1),YScore(:,2),[],Y,'filled','markeredgecolor','k'); 
-% %xlabel(append('LV1',' (Y_{var} = ',num2str(100*PCTVAR(2,1),'%.1f'),'%)')); ylabel(append('LV2',' (',num2str(100*PCTVAR(2,2),'%.1f'),'%)')); 
-% title('Y scores'); set(gca,'fontsize',20);
-% colormap winter; colorbar
 end
 
