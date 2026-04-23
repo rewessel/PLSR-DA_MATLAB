@@ -53,25 +53,13 @@ X_pre_z_total = X; %X_pre_z is pre z-scored X data
 X_pre_z = X; %X_pre_z is pre z-scored X data
 varNames_old = varNames;
 
-%% Optional - multilevel denoising for paired samples
-if strcmp(multilevel,'multilevel')
-    % multilevel denoising
-    for i = 1:height(X)/2
-        X(i,:) = X(i,:) - mean([X(i,:);X(i+height(X)/2,:)]);
-        X(i+height(X)/2,:) = X(i+height(X)/2,:) - mean([X(i,:);X(i+height(X)/2,:)]);
-    end
-
-else
-        X = zscore(X);
-end
-
 %% Optional LASSO feature selection
 clear lasso_feat b fitInfo minMSE minMSE_Lambda
 if strcmp(string(LASSO{1}),'yes')
 
 % [feat_filt,idx] = run_elastic_net(zscore(X), Y,myVarNames, 'minMSE', 0.1, 200, 0.5, 5);
 
-[varNames,ia] = run_elastic_net(X, Y, varNames_old, 'minMSE',LASSO{2}, 1000, LASSO{3}, cv_style{2});
+[varNames,ia] = run_elastic_net(zscore(X), Y, varNames_old, 'minMSE',LASSO{2}, 100, LASSO{3}, cv_style{2});
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
@@ -102,9 +90,24 @@ if strcmp(string(LASSO{1}),'yes')
 
 end
 
+%% Optional - multilevel denoising for paired samples
+if strcmp(multilevel,'multilevel')
+    % multilevel denoising
+    for i = 1:height(X)/2
+        pairwise_mean = mean([X(i,:);X(i+height(X)/2,:)]);
+        X(i,:) = X(i,:) - pairwise_mean;
+        X(i+height(X)/2,:) = X(i+height(X)/2,:) - pairwise_mean;
+    end
+
+% else
+%         X = zscore(X);
+end
+
+X = zscore(X);
+
 %% Orthogonal Projection to Latent Structures (OPLS)
 if strcmp(ortho,'orthogonal')
-    tol = 0.21;
+    tol = 0.1;
     [X_filt] = OPLS(X,Y,tol);
     X = X_filt; %set X as the orthogonalized/filtered data
 end
