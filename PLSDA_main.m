@@ -100,7 +100,7 @@ varNames_old = varNames;
 clear lasso_feat b fitInfo minMSE minMSE_Lambda
 if strcmp(string(LASSO{1}),'yes')
 
-[varNames,ia] = run_elastic_net(zscore(X), Y, varNames_old, 'minMSE',LASSO{2}, 100, LASSO{3}, cvStyle{2});
+[varNames,ia] = run_elastic_net(zscore(X), Y, varNames_old, 'minMSE',LASSO{2}, 100, LASSO{3}, 5);
 
     X = X(:,ia); %subset X to only contain LASSO-selected features
     X_pre_z = X_pre_z_total(:,ia); %subset X_pre_z to only LASSO-selected features
@@ -150,7 +150,7 @@ X = zscore(X);
 
 %% Orthogonalization (OPTIONAL) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if strcmp(ortho,'orthogonal')
-    tol = 0.1; % YOU CAN ADJUST THIS TOLERANCE VALUE IF THE MODEL DOES NOT PERFECTLY ORTHOGONALIZE
+    tol = 0.01; % YOU CAN ADJUST THIS TOLERANCE VALUE IF THE MODEL DOES NOT PERFECTLY ORTHOGONALIZE
     [X_filt] = OPLS(X,Y,tol);
     X = X_filt;
 end
@@ -163,7 +163,8 @@ for n = 1:100 % 100 rounds of cross validaton
 % Select cross-validation style
 if strcmp(cvStyle{1},'kfold')
     k_fold = cvStyle{2};
-    cvp = cvpartition(height(X),'KFold',k_fold);
+    [~,cv_idx]=max(Y,[],2);
+    cvp = cvpartition(cv_idx,'KFold',k_fold);
 elseif strcmp(cvStyle{1},'loo')
     cvp = cvpartition(height(X),'Leaveout');  
 end   
@@ -265,6 +266,7 @@ title(append('AUC=',string(auc)))
 TSS = sum((Y-mean(Y)).^2);
 
 [XLoading,YLoading,XScore,YScore,BETA,PCTVAR,MSE,stats] = plsregress(X,Y,nComp,'cv',cvp);
+% [XLoading,YLoading,XScore,YScore,BETA,PCTVAR,MSE,stats] = plsregress(X,Y,nComp);
 
 % Q2 = [0 1-length(Y)*MSE(2,2:end)/TSS]; [Q2max,Q2idx] = max(Q2);
 

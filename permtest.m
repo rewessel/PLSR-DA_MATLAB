@@ -121,7 +121,11 @@ end
 
 %determine the type of p-value to calculate
 if strcmp(stat_test,'wilcoxon')
-    p = ranksum(metric_rand,metric);
+    if width(Y)==2
+        p = ranksum(metric_rand,metric);
+    else
+        p = nan;
+    end
 elseif strcmp(stat_test,'empirical')
     if metric == CV_accuracy
         p = (length(find(metric_rand > mean(metric(1,:))))+1)/(nPerm+1);
